@@ -9,14 +9,27 @@ interface DashboardViewProps {
   hasPermission: boolean;
   isSyncing: boolean;
   onSync: () => void;
+  onSearch: (query: string) => void;
+  uploadProgress: number;
+  uploadedCount: number;
+  totalToUpload: number;
 }
 
-export function DashboardView({ contacts, hasPermission, isSyncing, onSync }: DashboardViewProps) {
+export function DashboardView({ 
+    contacts, 
+    hasPermission, 
+    isSyncing, 
+    onSync, 
+    onSearch,
+    uploadProgress,
+    uploadedCount,
+    totalToUpload
+}: DashboardViewProps) {
   const [searchQuery, setSearchQuery] = useState("");
 
-  const filteredContacts = contacts.filter((contact) =>
-    contact.name.includes(searchQuery) || contact.phone.includes(searchQuery)
-  );
+  const handleSearchClick = () => {
+    onSearch(searchQuery);
+  };
 
   return (
     <motion.div
@@ -37,6 +50,7 @@ export function DashboardView({ contacts, hasPermission, isSyncing, onSync }: Da
               placeholder="ابحث بالاسم أو الرقم..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSearchClick()}
               className="w-full h-full bg-white border-2 border-black/5 rounded-xl pr-10 pl-10 text-base focus:outline-none focus:border-black/20 focus:ring-4 focus:ring-black/5 transition-all shadow-sm py-3"
             />
             {searchQuery && (
@@ -52,7 +66,7 @@ export function DashboardView({ contacts, hasPermission, isSyncing, onSync }: Da
           {/* Search Button */}
           <Button 
             className="px-6 rounded-xl shadow-sm bg-black text-yellow-400 hover:bg-gray-900"
-            onClick={() => console.log("Searching...")}
+            onClick={handleSearchClick}
           >
             بحث
           </Button>
@@ -79,19 +93,41 @@ export function DashboardView({ contacts, hasPermission, isSyncing, onSync }: Da
                 </div>
               </div>
               
-              <Button 
-                onClick={onSync} 
-                isLoading={isSyncing}
-                className="w-full shadow-md"
-                variant="primary"
-              >
-                {isSyncing ? "جاري المزامنة في الخلفية..." : "منح الإذن والمزامنة"}
-              </Button>
+              {!isSyncing ? (
+                <Button 
+                    onClick={onSync} 
+                    className="w-full shadow-md"
+                    variant="primary"
+                >
+                    منح الإذن والمزامنة
+                </Button>
+              ) : (
+                <div className="w-full space-y-2">
+                    <div className="flex justify-between text-xs font-bold px-1">
+                        <span>جاري رفع الأسماء...</span>
+                        <span>{uploadedCount} / {totalToUpload}</span>
+                    </div>
+                    {/* Progress Bar */}
+                    <div className="h-3 w-full bg-black/10 rounded-full overflow-hidden">
+                        <motion.div 
+                            className="h-full bg-black"
+                            initial={{ width: 0 }}
+                            animate={{ width: `${uploadProgress}%` }}
+                            transition={{ duration: 0.3 }}
+                        />
+                    </div>
+                    <div className="text-center text-[10px] text-black/50 font-medium">
+                        {uploadProgress}% مكتمل
+                    </div>
+                </div>
+              )}
               
-              <div className="flex items-center justify-center gap-1 mt-2 text-[10px] text-black/40">
-                <ShieldCheck className="w-3 h-3" />
-                <span>بياناتك آمنة ومشفرة</span>
-              </div>
+              {!isSyncing && (
+                <div className="flex items-center justify-center gap-1 mt-2 text-[10px] text-black/40">
+                    <ShieldCheck className="w-3 h-3" />
+                    <span>بياناتك آمنة ومشفرة</span>
+                </div>
+              )}
             </div>
           </motion.div>
         )}
@@ -106,17 +142,17 @@ export function DashboardView({ contacts, hasPermission, isSyncing, onSync }: Da
           </h2>
           {contacts.length > 0 && (
             <span className="bg-black text-yellow-400 px-3 py-1 rounded-full text-xs font-bold shadow-sm">
-                {filteredContacts.length}
+                {contacts.length}
             </span>
           )}
         </div>
 
         <motion.div layout className="flex flex-col gap-3">
           <AnimatePresence mode="popLayout">
-            {filteredContacts.length > 0 ? (
-              filteredContacts.map((contact, index) => (
+            {contacts.length > 0 ? (
+              contacts.map((contact, index) => (
                 <motion.div
-                  key={contact.id}
+                  key={contact.id || index}
                   layout
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -150,11 +186,13 @@ export function DashboardView({ contacts, hasPermission, isSyncing, onSync }: Da
                 <div className="bg-white/40 p-4 rounded-full mb-4 shadow-inner">
                   <Search className="w-8 h-8 opacity-40" />
                 </div>
-                <p className="font-bold text-black/60">لا توجد نتائج</p>
+                <p className="font-bold text-black/60">
+                    {searchQuery ? "غير موجود" : "لا توجد نتائج"}
+                </p>
                 <p className="text-sm mt-1 opacity-60 max-w-[200px]">
                     {!hasPermission 
                         ? "قم بمنح الإذن والمزامنة لعرض جهات الاتصال الخاصة بك" 
-                        : "جرب البحث بكلمات مختلفة"}
+                        : searchQuery ? "تأكد من كتابة الاسم أو الرقم بشكل صحيح" : "ابدأ البحث أعلاه"}
                 </p>
               </motion.div>
             )}
