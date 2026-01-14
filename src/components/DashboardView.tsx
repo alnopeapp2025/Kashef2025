@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Phone, MoreVertical, X, User, CloudUpload, ShieldCheck } from "lucide-react";
+import { Search, Phone, MoreVertical, X, User, CloudUpload, ShieldCheck, Smartphone } from "lucide-react";
 import { Contact } from "../App";
 import { Button } from "./ui/Button";
 
@@ -89,7 +89,7 @@ export function DashboardView({
                 </div>
                 <div className="flex-1">
                     <h3 className="font-bold text-sm">مزامنة جهات الاتصال</h3>
-                    <p className="text-xs text-black/60">مطلوب إذن للوصول للأسماء ورفعها</p>
+                    <p className="text-xs text-black/60">رفع الأسماء لقاعدة البيانات (Cashif)</p>
                 </div>
               </div>
               
@@ -104,7 +104,7 @@ export function DashboardView({
               ) : (
                 <div className="w-full space-y-2">
                     <div className="flex justify-between text-xs font-bold px-1">
-                        <span>جاري رفع الأسماء...</span>
+                        <span>جاري الرفع لـ Supabase...</span>
                         <span>{uploadedCount} / {totalToUpload}</span>
                     </div>
                     {/* Progress Bar */}
@@ -125,7 +125,7 @@ export function DashboardView({
               {!isSyncing && (
                 <div className="flex items-center justify-center gap-1 mt-2 text-[10px] text-black/40">
                     <ShieldCheck className="w-3 h-3" />
-                    <span>بياناتك آمنة ومشفرة</span>
+                    <span>اتصال آمن ومشفر</span>
                 </div>
               )}
             </div>
@@ -161,18 +161,24 @@ export function DashboardView({
                   className="bg-white rounded-2xl p-4 shadow-sm hover:shadow-md transition-all flex items-center justify-between group cursor-pointer border border-black/5"
                 >
                   <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-full bg-black/5 flex items-center justify-center text-black font-bold text-lg border border-black/5">
+                    <div className="w-12 h-12 rounded-full bg-black/5 flex items-center justify-center text-black font-bold text-lg border border-black/5 shrink-0">
                       {contact.name.charAt(0)}
                     </div>
-                    <div className="flex flex-col">
-                      <span className="font-bold text-gray-900">{contact.name}</span>
+                    <div className="flex flex-col min-w-0">
+                      <span className="font-bold text-gray-900 truncate">{contact.name}</span>
                       <div className="flex items-center text-sm text-gray-500 gap-2 mt-0.5">
-                        <Phone className="w-3 h-3" />
-                        <span className="dir-ltr font-medium">{contact.phone}</span>
+                        <Phone className="w-3 h-3 shrink-0" />
+                        <span className="dir-ltr font-medium truncate">{contact.phone}</span>
                       </div>
+                      {contact.device_id && (
+                         <div className="flex items-center text-[10px] text-gray-400 gap-1 mt-1">
+                            <Smartphone className="w-3 h-3" />
+                            <span className="truncate max-w-[100px]">{contact.device_id}</span>
+                         </div>
+                      )}
                     </div>
                   </div>
-                  <button className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-black hover:bg-black/5 rounded-full transition-colors">
+                  <button className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-black hover:bg-black/5 rounded-full transition-colors shrink-0">
                     <MoreVertical className="w-5 h-5" />
                   </button>
                 </motion.div>
@@ -187,12 +193,12 @@ export function DashboardView({
                   <Search className="w-8 h-8 opacity-40" />
                 </div>
                 <p className="font-bold text-black/60">
-                    {searchQuery ? "غير موجود" : "لا توجد نتائج"}
+                    {searchQuery ? "غير موجود في قاعدة البيانات" : "لا توجد نتائج"}
                 </p>
                 <p className="text-sm mt-1 opacity-60 max-w-[200px]">
                     {!hasPermission 
-                        ? "قم بمنح الإذن والمزامنة لعرض جهات الاتصال الخاصة بك" 
-                        : searchQuery ? "تأكد من كتابة الاسم أو الرقم بشكل صحيح" : "ابدأ البحث أعلاه"}
+                        ? "قم بالمزامنة أولاً لملء قاعدة البيانات" 
+                        : searchQuery ? "جرب البحث برقم أو اسم آخر" : "ابدأ البحث أعلاه"}
                 </p>
               </motion.div>
             )}
