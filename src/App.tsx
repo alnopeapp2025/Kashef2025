@@ -1,9 +1,7 @@
 import { useState } from "react";
 import { Toaster, toast } from "sonner";
-import { motion, AnimatePresence } from "framer-motion";
-import { PermissionView } from "./components/PermissionView";
-import { DashboardView } from "./components/DashboardView";
 import { User } from "lucide-react";
+import { DashboardView } from "./components/DashboardView";
 
 // Types
 export interface Contact {
@@ -29,25 +27,33 @@ export default function App() {
   const [contacts, setContacts] = useState<Contact[]>([]);
 
   const handleRequestPermission = async () => {
+    if (isSyncing || hasPermission) return;
+    
     setIsSyncing(true);
     
-    // 1. Simulate Permission Request
-    toast.info("جاري طلب الإذن للوصول لجهات الاتصال...");
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    
-    // 2. Simulate Syncing/Fetching
-    toast.loading("جاري مزامنة جهات الاتصال...");
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    // بدء العملية في الخلفية (دون تعطيل الواجهة)
+    const syncProcess = async () => {
+        // 1. Simulate Permission Request
+        toast.info("جاري طلب الإذن...");
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+        
+        // 2. Simulate Fetching
+        toast.loading("جاري جلب جهات الاتصال...");
+        // نظهر البيانات للمستخدم بمجرد "جلبها" حتى لو الرفع لسا شغال
+        setContacts(MOCK_CONTACTS); 
+        await new Promise((resolve) => setTimeout(resolve, 1000));
 
-    // 3. Simulate Uploading to DB
-    toast.loading("جاري رفع البيانات لقاعدة البيانات...");
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+        // 3. Simulate Uploading to DB (Background)
+        toast.loading("جاري رفع البيانات للسحابة...");
+        await new Promise((resolve) => setTimeout(resolve, 2000));
 
-    // Success
-    setContacts(MOCK_CONTACTS);
-    setHasPermission(true);
-    setIsSyncing(false);
-    toast.success("تمت المزامنة والرفع بنجاح!");
+        setHasPermission(true);
+        setIsSyncing(false);
+        toast.success("تمت المزامنة والرفع بنجاح!");
+    };
+
+    // تنفيذ العملية
+    syncProcess();
   };
 
   return (
@@ -59,14 +65,14 @@ export default function App() {
       <div className="absolute bottom-[-10%] left-[-10%] w-80 h-80 bg-orange-500/10 rounded-full blur-3xl pointer-events-none" />
 
       {/* Main Container */}
-      <main className="w-full max-w-md flex flex-col gap-6 relative z-10 h-full min-h-[80vh]">
+      <main className="w-full max-w-md flex flex-col gap-4 relative z-10 h-full min-h-[80vh]">
         
-        {/* Header - Always Visible */}
+        {/* Header */}
         <header className="flex items-center justify-between pt-4 pb-2">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">جهات الاتصال</h1>
+            <h1 className="text-3xl font-bold tracking-tight">كاشف الأرقام</h1>
             <p className="text-black/60 font-medium text-sm mt-1">
-              {hasPermission ? "تمت المزامنة مع السحابة" : "مزامنة ونسخ احتياطي"}
+              {hasPermission ? "متصل بالسحابة" : "مزامنة ونسخ احتياطي"}
             </p>
           </div>
           <div className="bg-black/5 p-3 rounded-2xl backdrop-blur-sm">
@@ -74,23 +80,13 @@ export default function App() {
           </div>
         </header>
 
-        {/* Content Area */}
-        <div className="flex-1 flex flex-col">
-          <AnimatePresence mode="wait">
-            {!hasPermission ? (
-              <PermissionView 
-                key="permission" 
-                onGrant={handleRequestPermission} 
-                isSyncing={isSyncing} 
-              />
-            ) : (
-              <DashboardView 
-                key="dashboard" 
-                contacts={contacts} 
-              />
-            )}
-          </AnimatePresence>
-        </div>
+        {/* Unified View */}
+        <DashboardView 
+            contacts={contacts} 
+            hasPermission={hasPermission}
+            isSyncing={isSyncing}
+            onSync={handleRequestPermission}
+        />
 
       </main>
     </div>

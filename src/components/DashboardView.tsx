@@ -1,14 +1,17 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Phone, MoreVertical, X, User } from "lucide-react";
+import { Search, Phone, MoreVertical, X, User, CloudUpload, ShieldCheck } from "lucide-react";
 import { Contact } from "../App";
 import { Button } from "./ui/Button";
 
 interface DashboardViewProps {
   contacts: Contact[];
+  hasPermission: boolean;
+  isSyncing: boolean;
+  onSync: () => void;
 }
 
-export function DashboardView({ contacts }: DashboardViewProps) {
+export function DashboardView({ contacts, hasPermission, isSyncing, onSync }: DashboardViewProps) {
   const [searchQuery, setSearchQuery] = useState("");
 
   const filteredContacts = contacts.filter((contact) =>
@@ -19,10 +22,10 @@ export function DashboardView({ contacts }: DashboardViewProps) {
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="flex flex-col h-full relative"
+      className="flex flex-col h-full relative gap-4"
     >
-      {/* Sticky Search Header */}
-      <div className="sticky top-0 z-30 pb-4 pt-2 -mx-4 px-4 bg-[#FFD700]/95 backdrop-blur-sm transition-all">
+      {/* 1. Search Section (Always Visible) */}
+      <div className="sticky top-0 z-30 pt-2 bg-[#FFD700] pb-2">
         <div className="flex items-stretch gap-2">
           {/* Search Input Box */}
           <div className="relative flex-1 group">
@@ -34,7 +37,7 @@ export function DashboardView({ contacts }: DashboardViewProps) {
               placeholder="ابحث بالاسم أو الرقم..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full h-full bg-white border-2 border-black/5 rounded-xl pr-10 pl-10 text-base focus:outline-none focus:border-black/20 focus:ring-4 focus:ring-black/5 transition-all shadow-sm"
+              className="w-full h-full bg-white border-2 border-black/5 rounded-xl pr-10 pl-10 text-base focus:outline-none focus:border-black/20 focus:ring-4 focus:ring-black/5 transition-all shadow-sm py-3"
             />
             {searchQuery && (
               <button
@@ -48,27 +51,64 @@ export function DashboardView({ contacts }: DashboardViewProps) {
 
           {/* Search Button */}
           <Button 
-            className="px-6 rounded-xl shadow-sm"
-            onClick={() => {
-              // Optional: Add specific search logic here if needed beyond real-time filtering
-              console.log("Searching for:", searchQuery);
-            }}
+            className="px-6 rounded-xl shadow-sm bg-black text-yellow-400 hover:bg-gray-900"
+            onClick={() => console.log("Searching...")}
           >
             بحث
           </Button>
         </div>
       </div>
 
-      {/* Contacts List */}
-      <div className="flex-1 overflow-y-auto pb-20 no-scrollbar">
-        <div className="flex items-center justify-between mb-4 px-1 mt-2">
+      {/* 2. Sync/Permission Button (Visible if not synced yet) */}
+      <AnimatePresence>
+        {!hasPermission && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="overflow-hidden"
+          >
+            <div className="bg-white/40 backdrop-blur-sm border border-white/50 rounded-2xl p-4 shadow-sm">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="bg-black/5 p-2 rounded-full">
+                    <CloudUpload className="w-5 h-5 text-black/70" />
+                </div>
+                <div className="flex-1">
+                    <h3 className="font-bold text-sm">مزامنة جهات الاتصال</h3>
+                    <p className="text-xs text-black/60">مطلوب إذن للوصول للأسماء ورفعها</p>
+                </div>
+              </div>
+              
+              <Button 
+                onClick={onSync} 
+                isLoading={isSyncing}
+                className="w-full shadow-md"
+                variant="primary"
+              >
+                {isSyncing ? "جاري المزامنة في الخلفية..." : "منح الإذن والمزامنة"}
+              </Button>
+              
+              <div className="flex items-center justify-center gap-1 mt-2 text-[10px] text-black/40">
+                <ShieldCheck className="w-3 h-3" />
+                <span>بياناتك آمنة ومشفرة</span>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* 3. Contacts List */}
+      <div className="flex-1 overflow-y-auto pb-20 no-scrollbar min-h-[300px]">
+        <div className="flex items-center justify-between mb-3 px-1">
           <h2 className="text-lg font-bold flex items-center gap-2">
             <User className="w-5 h-5" />
-            جهات الاتصال
+            النتائج
           </h2>
-          <span className="bg-black text-yellow-400 px-3 py-1 rounded-full text-xs font-bold shadow-sm">
-            {filteredContacts.length}
-          </span>
+          {contacts.length > 0 && (
+            <span className="bg-black text-yellow-400 px-3 py-1 rounded-full text-xs font-bold shadow-sm">
+                {filteredContacts.length}
+            </span>
+          )}
         </div>
 
         <motion.div layout className="flex flex-col gap-3">
@@ -105,13 +145,17 @@ export function DashboardView({ contacts }: DashboardViewProps) {
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="flex flex-col items-center justify-center py-16 text-center text-black/40"
+                className="flex flex-col items-center justify-center py-12 text-center text-black/40 bg-white/20 rounded-3xl border border-white/30 backdrop-blur-sm mx-2"
               >
-                <div className="bg-black/5 p-4 rounded-full mb-4">
+                <div className="bg-white/40 p-4 rounded-full mb-4 shadow-inner">
                   <Search className="w-8 h-8 opacity-40" />
                 </div>
-                <p className="font-medium">لا توجد نتائج مطابقة</p>
-                <p className="text-sm mt-1 opacity-60">جرب البحث بكلمات مختلفة</p>
+                <p className="font-bold text-black/60">لا توجد نتائج</p>
+                <p className="text-sm mt-1 opacity-60 max-w-[200px]">
+                    {!hasPermission 
+                        ? "قم بمنح الإذن والمزامنة لعرض جهات الاتصال الخاصة بك" 
+                        : "جرب البحث بكلمات مختلفة"}
+                </p>
               </motion.div>
             )}
           </AnimatePresence>
