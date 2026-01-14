@@ -12,7 +12,7 @@ export interface Contact {
   email?: string;
 }
 
-// Helper to generate mock contacts for simulation
+// Helper to generate mock contacts for simulation (للمحاكاة فقط حتى يتم الربط الفعلي)
 const generateMockContacts = (count: number): Omit<Contact, 'id'>[] => {
   const names = ["محمد", "أحمد", "سارة", "خالد", "نورة", "فيصل", "ريم", "عبدالله", "فهد", "منى"];
   const families = ["العتيبي", "القحطاني", "الشمري", "الدوسري", "المالكي", "الزهراني", "الغامدي", "السبيعي"];
@@ -37,12 +37,12 @@ export default function App() {
   // Search Functionality
   const handleSearch = async (query: string) => {
     if (!query.trim()) {
-      setContacts([]); // Clear results if empty
+      setContacts([]); 
       return;
     }
 
     try {
-      // البحث في Supabase
+      // البحث في Supabase في جدول contacts
       const { data, error } = await supabase
         .from('contacts')
         .select('*')
@@ -58,7 +58,7 @@ export default function App() {
       }
     } catch (error) {
       console.error("Search error:", error);
-      // Fallback for demo if Supabase is not connected
+      // رسالة توضيحية في حال لم يتم الربط بعد
       toast.error("تأكد من ربط Supabase للبحث الفعلي");
     }
   };
@@ -72,39 +72,37 @@ export default function App() {
     setUploadedCount(0);
     
     try {
-      // 1. Simulate Permission Request
-      toast.info("جاري طلب إذن الوصول لجهات الاتصال...");
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      // 1. محاكاة طلب الإذن
+      // toast.info("جاري طلب إذن الوصول..."); // تم إزالتها للتركيز على شريط التقدم
+      await new Promise((resolve) => setTimeout(resolve, 800));
       
-      // 2. Simulate Fetching Contacts from Phone
-      const contactsToUpload = generateMockContacts(50); // Simulating 50 contacts
+      // 2. تجهيز البيانات (محاكاة جلب الأسماء من الهاتف)
+      const contactsToUpload = generateMockContacts(50); 
       setTotalToUpload(contactsToUpload.length);
       
-      // 3. Uploading to Supabase in Batches
-      const batchSize = 10;
+      // 3. الرفع لـ Supabase على دفعات
+      const batchSize = 5; // تقليل الدفعة لرؤية التقدم بوضوح
       let currentUploaded = 0;
 
       for (let i = 0; i < contactsToUpload.length; i += batchSize) {
         const batch = contactsToUpload.slice(i, i + batchSize);
         
-        // محاولة الرفع لـ Supabase
+        // محاولة الرفع الفعلي
         try {
-            const { error } = await supabase.from('contacts').insert(batch);
-            if (error) {
-                // إذا فشل الرفع (بسبب عدم وجود اتصال حقيقي)، نكمل المحاكاة فقط للعرض
-                console.warn("Supabase insert failed (expected if not connected):", error);
-            }
+            await supabase.from('contacts').insert(batch);
         } catch (e) {
-            console.warn("Upload error", e);
+            // نتجاهل الخطأ هنا لكي يستمر شريط التقدم في العرض (وضع تجريبي)
+            console.warn("Supabase insert warning:", e);
         }
 
-        // Update Progress
+        // تحديث شريط التقدم
         currentUploaded += batch.length;
-        setUploadedCount(Math.min(currentUploaded, contactsToUpload.length));
-        setUploadProgress(Math.round((currentUploaded / contactsToUpload.length) * 100));
+        const safeCount = Math.min(currentUploaded, contactsToUpload.length);
+        setUploadedCount(safeCount);
+        setUploadProgress(Math.round((safeCount / contactsToUpload.length) * 100));
         
-        // Delay for visual effect
-        await new Promise((resolve) => setTimeout(resolve, 500));
+        // تأخير بسيط للمؤثرات البصرية
+        await new Promise((resolve) => setTimeout(resolve, 300));
       }
 
       setHasPermission(true);
@@ -115,11 +113,11 @@ export default function App() {
       toast.error("حدث خطأ أثناء المزامنة");
     } finally {
       setIsSyncing(false);
-      // Reset progress after a delay
+      // إعادة تعيين التقدم بعد فترة بسيطة
       setTimeout(() => {
         setUploadProgress(0);
         setUploadedCount(0);
-      }, 2000);
+      }, 3000);
     }
   };
 
