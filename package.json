@@ -11,7 +11,7 @@
     "lint:dualite": "eslint --config eslint.dualite.config.js .",
     "tsc:dualite": "yarn tsc -p tsconfig.dualite.json",
     "preview": "vite preview",
-    "predeploy": "yarn build",
+    "predeploy": "npm run build",
     "deploy": "gh-pages -d dist"
   },
   "dependencies": {
