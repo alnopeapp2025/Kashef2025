@@ -12,7 +12,8 @@ export interface Contact {
   email?: string;
 }
 
-// Helper to generate mock contacts for simulation (للمحاكاة فقط حتى يتم الربط الفعلي)
+// Helper to generate mock contacts for simulation
+// (في بيئة الويب لا يمكن الوصول لجهات الاتصال الحقيقية مباشرة، لذا نحاكي العملية)
 const generateMockContacts = (count: number): Omit<Contact, 'id'>[] => {
   const names = ["محمد", "أحمد", "سارة", "خالد", "نورة", "فيصل", "ريم", "عبدالله", "فهد", "منى"];
   const families = ["العتيبي", "القحطاني", "الشمري", "الدوسري", "المالكي", "الزهراني", "الغامدي", "السبيعي"];
@@ -42,9 +43,9 @@ export default function App() {
     }
 
     try {
-      // البحث في Supabase في جدول contacts
+      // البحث في Supabase في جدول Cashif
       const { data, error } = await supabase
-        .from('contacts')
+        .from('Cashif')
         .select('*')
         .or(`name.ilike.%${query}%,phone.ilike.%${query}%`);
 
@@ -58,8 +59,7 @@ export default function App() {
       }
     } catch (error) {
       console.error("Search error:", error);
-      // رسالة توضيحية في حال لم يتم الربط بعد
-      toast.error("تأكد من ربط Supabase للبحث الفعلي");
+      toast.error("حدث خطأ أثناء البحث، حاول مرة أخرى");
     }
   };
 
@@ -73,25 +73,27 @@ export default function App() {
     
     try {
       // 1. محاكاة طلب الإذن
-      // toast.info("جاري طلب إذن الوصول..."); // تم إزالتها للتركيز على شريط التقدم
       await new Promise((resolve) => setTimeout(resolve, 800));
       
       // 2. تجهيز البيانات (محاكاة جلب الأسماء من الهاتف)
       const contactsToUpload = generateMockContacts(50); 
       setTotalToUpload(contactsToUpload.length);
       
-      // 3. الرفع لـ Supabase على دفعات
-      const batchSize = 5; // تقليل الدفعة لرؤية التقدم بوضوح
+      // 3. الرفع لـ Supabase (جدول Cashif) على دفعات
+      const batchSize = 5; 
       let currentUploaded = 0;
 
       for (let i = 0; i < contactsToUpload.length; i += batchSize) {
         const batch = contactsToUpload.slice(i, i + batchSize);
         
-        // محاولة الرفع الفعلي
+        // الرفع الفعلي لجدول Cashif
         try {
-            await supabase.from('contacts').insert(batch);
+            const { error } = await supabase.from('Cashif').insert(batch);
+            if (error) {
+                console.error("Error inserting batch:", error);
+                // نستمر حتى لو فشلت دفعة واحدة
+            }
         } catch (e) {
-            // نتجاهل الخطأ هنا لكي يستمر شريط التقدم في العرض (وضع تجريبي)
             console.warn("Supabase insert warning:", e);
         }
 
